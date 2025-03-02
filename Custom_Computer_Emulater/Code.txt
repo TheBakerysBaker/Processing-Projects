@@ -1,0 +1,507 @@
+:Print_Char
+	push %A
+	push %B
+	push %C
+	push %D
+	push %E
+	mult %A 49 %A
+	add 52944 %A %A
+	move 4096 %E
+	move 0 %B
+	:print_y_loop
+		move 0 %C
+		add %B %G %D
+		mult %D *E %D
+		add 20544 %D %D
+		add %F %D %D
+		:print_x_loop
+
+			move *A *D
+			add 1 %A %A
+			add 1 %D %D
+
+		add 1 %C %C
+		compare 7 %C
+		jumpNE print_x_loop
+
+	add 1 %B %B
+	compare 7 %B
+	jumpNE print_y_loop
+	pop %E
+	pop %D
+	pop %C
+	pop %B
+	pop %A
+return
+
+:abs_return
+	move %A %R
+return
+:abs
+	compare %A 0
+	jumpGE abs_return
+
+	not %A %A
+	add %A 1 %A
+
+	move %A %R
+return
+
+:RNG
+	move 4099 %A
+	move *A %A
+:RNG_SEED
+	push %B
+	<< %A 7 %B
+	xor %A %B %A
+	>> %A 9 %B
+	xor %A %B %A
+	<< %A 8 %B
+	xor %A %B %A
+	move 4099 %B
+	move %A *B
+	move %A %R
+	pop %B
+return
+
+:Cursor
+	push %A
+	push %B
+	push %C
+	push %D
+	push %E
+	push %F
+	push %G
+
+	move 4102 %A
+	move 4103 %B
+	move 4104 %C
+	move *A %F
+	move *B %G
+
+	and 65535 *C %D
+	compare %D 32768
+	add %PC 5 %D
+	jumpLE %D
+	move '_' %A
+	add %PC 3 %D
+	jump %D
+	move 32 %A
+	add 1 *C %D
+	move %D *C
+	call Print_Char
+
+	pop %G
+	pop %F
+	pop %E
+	pop %D
+	pop %C
+	pop %B
+	pop %A
+return
+
+:clear_cursor
+	move 4104 %C
+	move *C %A
+	move 0 *C
+	call Cursor
+	move %A *C
+return
+
+:enter_key_pressed
+	push %A
+	push %B
+	call clear_cursor
+	move 4102 %A
+	move 4103 %B
+	move 0 *A
+	add *B 7 %A
+	move %A *B
+
+	pop %B
+	pop %A
+return
+:Echo
+	push %A
+	push %B
+	push %C
+	push %D
+	push %E
+	
+	compare %A 10
+	add %PC 9 %C
+	jumpNE %C
+	call enter_key_pressed
+	pop %E
+	pop %D
+	pop %C
+	pop %B
+	pop %A
+	return
+
+	move 4102 %B
+	move 4103 %C
+
+	move *B %F
+	move *C %G
+	call Print_Char
+	add 7 *B %D
+	mod %D 175 %D
+	move %D *B
+	compare *B 0
+	add %PC 4 %D
+	jumpNE %D
+	add *C 7 %D
+	move %D *C
+	
+
+	pop %E
+	pop %D
+	pop %C
+	pop %B
+	pop %A
+return
+
+:Print_String
+	:Print_String_loop
+	compare *A 0
+	add 3 %PC %B
+	jumpNE %B
+	return
+
+	push %A
+
+	move *A %A
+	call Echo
+
+	pop %A
+	sub %A 1 %A
+
+	jump Print_String_loop
+return
+
+:Read_Char
+	push %A
+	push %B
+	push %C
+	move 4100 %A
+	move 4101 %B
+	move 1 *A
+	compare *B 1
+	add %PC 3 %C
+	jumpE %C
+	move *B %R
+	move 0 *B
+	pop %C
+	pop %B
+	pop %A
+return
+
+:backspace_key_pressed
+	push %A
+	push %B
+	call clear_cursor
+	move 4102 %A
+	move 4103 %B
+	move 0 *A
+	sub *B 7 %A
+	move %A *B
+	pop %B
+	pop %A
+return
+
+:key_pressed_return
+return
+:key_pressed
+	call Read_Char
+	compare %R 32
+	add %PC 7 %C
+	jumpL %C
+	compare %R 256
+	add %PC 4 %C
+	jumpG %C
+	move %R %A
+	call Echo
+	compare %R 8
+	jumpE backspace_key_pressed
+	compare %R 10
+	jumpE enter_key_pressed
+return
+
+:bootup
+	move %SP %A
+	push 'b'
+	push 'o'
+	push 'o'
+	push 't'
+	push 'e'
+	push 'd'
+	push 10
+	push 0
+	
+	move 0 %F
+	move 0 %G
+	call Print_String
+
+	add %SP 8 %SP
+return
+
+:point
+	move 4096 %R
+	mult %B *R %R
+	add 12352 %R %R
+	add %A %R %R
+	move %C *R
+return
+
+:line_return
+return
+:Line
+	sub %C %A %E
+	push %A
+	move %E %A
+	call abs
+	move %R %E
+	pop %A
+	
+	push %C
+	compare %A %C
+	add %PC 5 %C
+	jumpL %C
+	move -1 %F
+	add %PC 3 %C
+	jump %C
+	move 1 %F
+	pop %C
+
+	push %A
+	sub %D %B %G
+	move %G %A
+	call abs
+	not %R %G
+	add %G 1 %G
+	pop %A
+
+	push %C
+	compare %B %D
+	add %PC 5 %C
+	jumpL %C
+	move -1 %H
+	add %PC 3 %C
+	jump %C
+	move 1 %H
+	pop %C
+	
+	add %E %G %R
+	
+	:line_loop
+		push %C
+		push %R
+		move 0x0DF0 %C
+		call point
+		pop %R
+		pop %C
+		
+		mult 2 %R %Z
+		
+		compare %Z %G
+		push %C
+		add %PC 6 %C
+		jumpL %C
+		pop %C
+			compare %A %C
+			jumpE line_return
+			add %R %G %R
+			add %A %F %A
+		compare %Z %E
+		jumpG line_loop
+		compare %B %D
+		jumpE line_return
+		add %R %E %R
+		add %B %H %B
+	jump line_loop
+
+return
+
+:map
+	push %B
+	push %C
+	push %D
+
+	ItoF %A %A
+	divF %A 100f %A
+	multF %A 256f %A
+	FtoI %A %A
+
+	and %A 0x003F %A
+
+	ItoF %A %B
+	divF %B 64f %B
+	multF %B 16f %B
+	FtoI %B %B
+
+	<< %A 4 %A
+	or %B %A %B
+	<< %A 6 %A
+	or %B %A %B
+
+	move %B %R
+	
+	pop %D
+	pop %C
+	pop %B
+return
+
+:mandlebrot
+	sub %SP 3 %SP
+	move 4096 %C
+	move 4097 %D
+	move 0 %A
+	:print_y_loop
+		move 0 %B
+		mult %A *C %Z
+		add 20544 %Z %Z
+		:print_x_loop
+			ItoF %A %E
+			ItoF *D %F
+			divF %E %F %E
+			add %SP 1 %SP
+			multF %E *SP %E
+			sub %SP 1 %SP
+			add %SP 2 %SP
+			subF %E *SP %E
+			sub %SP 2 %SP
+			
+			ItoF %B %F
+			ItoF *C %G
+			divF %F %G %F
+			add %SP 1 %SP
+			multF %F *SP %F
+			sub %SP 1 %SP
+			add %SP 3 %SP
+			subF %F *SP %F
+			sub %SP 3 %SP
+			
+			move 0 %J
+			move 0 %K
+			move 0 %H
+			:mandlebrot_loop
+
+			multF %J %J %I
+			multF %K %K %L
+			subF %I %L %L
+			addF %L %F %L
+
+			multF %J %K %K
+			multF %K 2f %K
+			addF %K %E %K
+
+			move %L %J
+			
+			addF %J %K %L
+			and 0x7FFF %L %L
+
+			add %PC 7 %R
+			compareF %L 16f
+			jumpG %R
+
+			add %H 1 %H
+			compare %H 100
+			jumpNE mandlebrot_loop
+			move 0 %H
+
+			push %A
+			move %H %A
+			call RNG_SEED
+			move %R %G
+			pop %A
+
+			move %G *Z
+			add 1 %Z %Z
+
+		add 1 %B %B
+		compare *C %B
+		jumpNE print_x_loop
+
+	add 1 %A %A
+	compare *D %A
+	jumpNE print_y_loop
+	add %SP 3 %SP
+return
+
+:Background
+	move 4096 %D
+	move 4097 %E
+	mult *D *E %D
+	move 0 %A
+	move 20544 %C
+	:background_loop_y
+		move 0 *C
+		add %C 1 %C
+	add %A 1 %A
+	compare %D %A
+	jumpG background_loop_y
+return
+
+:main
+	*call Background
+	*call bootup
+	move 2f %A
+	move 1.5f %B
+	move 3f %C
+	push %A
+	push %B
+	push %C
+:main_loop
+	call Read_Char
+	pop %C
+	pop %B
+	pop %A
+	multF %C .04f %D
+
+	compare %R 'a'
+	add %PC 3 %H
+	jumpNE %H
+	addF %A %D %A
+	compare %R 'd'
+	add %PC 3 %H
+	jumpNE %H
+	subF %A %D %A
+
+	compare %R 'w'
+	add %PC 3 %H
+	jumpNE %H
+	addF %B %D %B
+	compare %R 's'
+	add %PC 3 %H
+	jumpNE %H
+	subF %B %D %B
+
+	move %C %D
+
+	compare %R 'z'
+	add %PC 3 %H
+	jumpNE %H
+	multF %C 1.1f %C
+	compare %R 'x'
+	add %PC 3 %H
+	jumpNE %H
+	divF %C 1.1f %C
+
+	subF %D %C %D
+	divF %D 2f %D
+	subF %A %D %A
+	subF %B %D %B
+
+	push %A
+	push %B
+	push %C
+	sub %SP 1 %SP
+	push %A
+	push %B
+	push %C
+	add %SP 4 %SP
+	call mandlebrot
+	*call key_pressed
+	*call Cursor
+	jump main_loop
